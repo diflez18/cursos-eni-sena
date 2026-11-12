@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oferta de Cursos</title>
+
+    <style>
+        :root {
+            --primary: #0f4c81;
+            --secondary: #1e88e5;
+            --success: #2e7d32;
+            --light: #f5f7fa;
+            --white: #ffffff;
+            --gray: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body{
+            background: var(--light);
+            color:#333;
+        }
+
+        header{
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color:white;
+            padding:40px 20px;
+            text-align:center;
+        }
+
+        header h1{
+            font-size:2rem;
+            margin-bottom:10px;
+        }
+
+        header p{
+            opacity:0.9;
+        }
+
+        .container{
+            max-width:1200px;
+            margin:auto;
+            padding:40px 20px;
+        }
+
+        .toolbar{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            flex-wrap:wrap;
+            gap:15px;
+            margin-bottom:30px;
+        }
+
+        .btn{
+            background:var(--primary);
+            color:white;
+            border:none;
+            padding:12px 20px;
+            border-radius:8px;
+            cursor:pointer;
+            transition:0.3s;
+            font-weight:600;
+        }
+
+        .btn:hover{
+            background:var(--secondary);
+        }
+
+        .status{
+            color:var(--gray);
+            font-size:0.95rem;
+        }
+
+        .courses-grid{
+            display:grid;
+            grid-template-columns: repeat(auto-fit,minmax(320px,1fr));
+            gap:20px;
+        }
+
+        .course-card{
+            background:var(--white);
+            border-radius:12px;
+            box-shadow:var(--shadow);
+            padding:20px;
+            transition:0.3s;
+            border:1px solid var(--border);
+        }
+
+        .course-card:hover{
+            transform:translateY(-4px);
+        }
+
+        .course-id{
+            display:inline-block;
+            background:#eef4ff;
+            color:var(--secondary);
+            padding:6px 10px;
+            border-radius:30px;
+            font-size:0.8rem;
+            font-weight:600;
+            margin-bottom:15px;
+        }
+
+        .course-title{
+            font-size:1.2rem;
+            font-weight:bold;
+            margin-bottom:12px;
+            color:var(--primary);
+        }
+
+        .course-description{
+            color:#555;
+            line-height:1.5;
+        }
+
+        .loading,
+        .error,
+        .empty{
+            text-align:center;
+            padding:40px;
+            font-size:1.1rem;
+        }
+
+        .error{
+            color:#c62828;
+        }
+
+        footer{
+            margin-top:50px;
+            text-align:center;
+            padding:20px;
+            color:#666;
+            border-top:1px solid #ddd;
+        }
+
+        @media(max-width:768px){
+
+            header h1{
+                font-size:1.6rem;
+            }
+
+            .toolbar{
+                flex-direction:column;
+                align-items:stretch;
+            }
+
+            .btn{
+                width:100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Oferta Académica</h1>
+    <p>Consulta de cursos desde API REST</p>
+</header>
+
+<main class="container">
+
+    <div class="toolbar">
+        <button class="btn" onclick="cargarCursos()">
+            Actualizar Cursos
+        </button>
+
+        <span class="status" id="status">
+            Presione "Actualizar Cursos"
+        </span>
+    </div>
+
+    <div id="coursesContainer" class="courses-grid"></div>
+
+</main>
+
+<footer>
+    Plataforma de Consulta de Cursos - DIFLEZ © 2026
+</footer>
+
+<script>
+
+    // CONFIGURACIÓN API
+    const API_URL = "https://bxwbslmezksarabulode.supabase.co/rest/v1/capacitaciones?select=*";
+
+    const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4d2JzbG1lemtzYXJhYnVsb2RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ0OTU4MTYsImV4cCI6MjExMDA3MTgxNn0.1uC3Rfcw4BV7acK9t7HVzh7lJHmrnhtJQnSVS8tDGaw";
+
+    const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4d2JzbG1lemtzYXJhYnVsb2RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ0OTU4MTYsImV4cCI6MjExMDA3MTgxNn0.1uC3Rfcw4BV7acK9t7HVzh7lJHmrnhtJQnSVS8tDGaw";
+
+    const container = document.getElementById("coursesContainer");
+    const status = document.getElementById("status");
+
+    async function cargarCursos() {
+
+        try {
+
+            status.textContent = "Consultando cursos...";
+            container.innerHTML =
+                '<div class="loading">Cargando información...</div>';
+
+            const response = await fetch(API_URL, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "apikey": API_KEY,
+                    "Authorization": `Bearer ${TOKEN}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(
+                    `Error ${response.status}: ${response.statusText}`
+                );
+            }
+
+            const cursos = await response.json();
+
+            renderCursos(cursos);
+
+            status.textContent =
+                `${cursos.length} cursos encontrados`;
+
+        } catch (error) {
+
+            console.error(error);
+
+            status.textContent = "Error al consultar la API";
+
+            container.innerHTML = `
+                <div class="error">
+                    ${error.message}
+                </div>
+            `;
+        }
+    }
+
+    function renderCursos(cursos) {
+
+        if (!cursos || cursos.length === 0) {
+            container.innerHTML = `
+                <div class="empty">
+                    No existen cursos disponibles
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = cursos.map(curso => `
+            <article class="course-card">
+
+                <div class="course-id">
+                    ID: ${curso.id}
+                </div>
+
+                <h2 class="course-title">
+                    ${curso.titulo}
+                </h2>
+
+                <p class="course-description">
+                    ${curso.descripcion}
+                </p>
+
+            </article>
+        `).join('');
+    }
+
+    // Carga automática al abrir la página
+    window.addEventListener("load", cargarCursos);
+
+</script>
+
+</body>
+</html>
